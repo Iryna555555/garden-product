@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import "./Navbar.scss";
-import { NavLink, Link } from 'react-router';
+import { NavLink, Link} from 'react-router';
 import { Heart, Moon, ShoppingBag, Sun, X } from 'lucide-react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../store/slices/themeSlice';
 import Button from '../Button/Button';
 import { showDailyProduct } from '../../store/slices/productSlice';
@@ -11,11 +11,17 @@ import { showDailyProduct } from '../../store/slices/productSlice';
 
 const Navbar = () => {
 
-    const [width, setWidth] = useState(window.outerWidth);
+    const [width, setWidth] = useState(window.innerWidth);
 
     const [isOpen, setIsOpen] = useState(false);
 
     const dispatch = useDispatch();
+
+    const cartCounter = useSelector(state => state.cart.count);
+
+    const likedCounter = useSelector(state => state.favorite.count);
+
+    const menuRef = useRef(null);
 
     // toggles dark-mode after click
     const toggleThemeHandler = () => {
@@ -28,8 +34,31 @@ const Navbar = () => {
         dispatch(showDailyProduct());
     }
 
+    const toggleMenu = () => {
+        let timeout = 0;
+        switch(isOpen){
+            case true:
+                setIsOpen(false);
+                timeout = setTimeout(() => {
+                    menuRef.current.style.display = "none";
+                }, 400)
+                return () => clearTimeout(timeout);
+
+            case false:
+                setTimeout(() => {
+                    setIsOpen(true);
+                    menuRef.current.style.display = "flex"
+                }, 10)
+                return () => clearTimeout(timeout);
+
+
+            default:
+                return menuRef.current.style.display = "none";
+        }
+    }
+
     useEffect(() => {
-        const resizeHandler = () => setWidth(window.outerWidth);
+        const resizeHandler = () => setWidth(window.innerWidth);
         window.addEventListener("resize", resizeHandler);
 
         return () => {window.removeEventListener("resize", resizeHandler)}
@@ -63,22 +92,28 @@ const Navbar = () => {
             <div className="nav-right">
                 <div className="icon-item">
                     <Link to={"/favorites"}><Heart className='icon' /></Link>
-                    <span className="count">1</span>
+                    {
+                        likedCounter !== 0 &&
+                        <span className='count'>{likedCounter}</span>
+                    }
                 </div>
                 <div className="icon-item">
                     <Link to={"/cart"}><ShoppingBag className='icon' /></Link>
-                    <span className="count">10</span>
+                    {
+                        cartCounter !== 0 &&
+                        <span className='count'>{cartCounter}</span>
+                    }
                 </div>
                 {width < 768 &&
                 <>
-                <div className="burger" onClick={() => setIsOpen(!isOpen)}>
+                <div className="burger" onClick={toggleMenu}>
                     <div className={isOpen ? "bar open" : "bar"}></div>
                     <div className={isOpen ? "bar open" : "bar"}></div>
                     <div className={isOpen ? "bar open" : "bar"}></div>
                 </div>
-                <div className={`menu ${isOpen ? "open" : ""}`}>
+                <div ref={menuRef} className={`menu ${isOpen ? "open" : ""}`}>
                     <div className="menu-content">
-                        <X className='icon' onClick={() => setIsOpen(false)} />
+                        <X className='icon' onClick={toggleMenu} />
                             <div className="menu-links">
                             <Link to="/" onClick={() => setIsOpen(false)} className="link">Main Page</Link>
                             <Link to="/categories" onClick={() => setIsOpen(false)} className="link">Categories</Link>

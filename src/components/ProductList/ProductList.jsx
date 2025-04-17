@@ -3,25 +3,34 @@ import "./ProductList.scss";
 import ProductCard from '../ProductCard/ProductCard'
 import { useSelector } from 'react-redux';
 
-
+// ProductList component displays a list of products with filtering and sorting functionality
 const ProductList = ({products, sales}) => {
+    // State for storing filtered products
     const [filteredProducts, setFilteredProducts] = useState(products);
+
+    // Extract filter and sorting values from Redux store
     const discounted = useSelector(state => state.filter.discountActive);
     const {minPrice, maxPrice, sorted} = useSelector(state => state.filter);
+
+    // Determine which products should be displayed
     const currentProducts = sales ? products.filter(product => product.discont_price !== null) : products; //if sales = true, it shows products with sales only. Otherwise it shows all products (for "all sales")
   
+    // Function to filter and sort products based on user selection
     const filterProducts = () => {
       let filtered = currentProducts;
       
+      // Filter products to show only those with discounts if enabled
       if(discounted){
-        filtered = filtered.filter(product => product.discont_price !== null); // filter products with sale
+        filtered = filtered.filter(product => product.discont_price !== null); 
       }
   
+       // Filter products based on price range
       filtered = filtered.filter(product => {
-        const price = product.discont_price ?? product.price; // set sale price if given
+        const price = product.discont_price ?? product.price; 
         return price > minPrice && price < maxPrice;
       })
   
+      // Sorting logic based on selected sorting criteria
       filtered.sort((a, b) => {
         const getPrice = product => product.discont_price ?? product.price;
         switch(sorted){
@@ -43,16 +52,23 @@ const ProductList = ({products, sales}) => {
             if (a.discont_price && !b.discont_price) return -1;
             if (!a.discont_price && b.discont_price) return 1;
             return bSale - aSale;
+
+          //sort alphabetically
+          case "alphabet":
+            if(a.title < b.title) return -1;
+            if(a.title > b.title) return 1;
+            return 0;
   
           default:
             return 0;
         };
       })
   
-  
+      // Update state with filtered and sorted products
       setFilteredProducts(filtered);
     };
 
+    // Run filtering function whenever relevant dependencies change
       useEffect(() => {
         filterProducts();
       }, [products, discounted, minPrice, maxPrice, sorted]);
@@ -65,7 +81,8 @@ const ProductList = ({products, sales}) => {
       discont_price={product.discont_price}
       image={product.image}
       title={product.title}
-      price={product.price} />
+      price={product.price}
+      product={product} />
     )
   )
   : <p className='products-empty'>No products found</p>
